@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cuenta atrás Irlanda — responsive</title>
+<style>
+:root{
+--bg:#0b0f19; --card:#131a2c; --text:#e9f1ff; --tile:#0d1524; --hover:#1a2540; --accent:#4dc8ff;
+}
+.light{ --bg:#f2f6ff; --card:#ffffff; --text:#0b1a33; --tile:#e7eef9; --hover:#dce7fa; --accent:#2fa0ff; }
+/* Base */
+html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;}
+body{transition:background .35s,color .35s;overflow-y:auto;}
+/* PARTICULAS (canvas) */
+#particles{position:fixed;inset:0;z-index:0;pointer-events:none;display:block;}
+/* Top-left device badge */
+#deviceBadge{
+position:fixed;left:10px;top:10px;z-index:25;
+background:rgba(0,0,0,0.25);backdrop-filter:blur(6px);
+color:var(--text);padding:6px 10px;border-radius:10px;font-size:0.85rem;display:flex;gap:8px;align-items:center;
+box-shadow:0 4px 14px rgba(0,0,0,0.35);
+}
+@media (max-width:420px){ #deviceBadge{font-size:0.75rem;padding:5px 8px} }
+/* Top right controls */
+#topBar{position:fixed;right:10px;top:10px;display:flex;gap:8px;z-index:25}
+.top-btn{background:var(--card);color:var(--text);border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:0.9rem}
+.top-btn:hover{background:var(--hover)}
+/* Welcome screen */
+#welcome{
+position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;
+background:linear-gradient(180deg, rgba(11,15,25,0.95), rgba(11,15,25,0.9));
+transition:opacity .45s, transform .45s;
+flex-direction:column;padding:20px;
+}
+#welcome.hide{opacity:0;pointer-events:none;transform:translateY(-20px)}
+#welcome h1{font-size:2.2rem;margin:0 0 10px;letter-spacing:0.2px}
+#welcome p{margin:0;color:rgba(234,241,255,0.85);opacity:0;transform:translateY(6px);animation:welcomeText 0.6s forwards 0.2s}
+@keyframes welcomeText{to{opacity:1;transform:none}}
+#startBtn{margin-top:20px;padding:12px 22px;border-radius:10px;border:none;background:var(--accent);color:#07111f;font-weight:600;cursor:pointer;opacity:0;transform:translateY(12px);transition:opacity .35s, transform .35s}
+#startBtn.show{opacity:1;transform:translateY(0)}
+/* MAIN */
+#main{position:relative;z-index:5;max-width:820px;margin:100px auto;padding:24px;}
+#irelandBox{display:flex;align-items:center;gap:12px;background:var(--card);padding:12px 14px;border-radius:12px;margin-bottom:18px;box-shadow:0 6px 18px rgba(0,0,0,0.3)}
+#irelandBox img{width:36px;height:36px}
+#weatherBox{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:0.95rem}
+#liveDot{width:9px;height:9px;border-radius:50%;background:red;animation:blink 1s infinite;display:inline-block;box-shadow:0 0 6px rgba(255,0,0,0.5)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.card{background:var(--card);padding:20px;border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,0.35)}
+h2{margin:0 0 8px;font-size:1.3rem}
+.controls{display:flex;gap:10px;align-items:center;margin-top:8px}
+input[type="date"]{padding:10px;border-radius:8px;border:none;background:var(--tile);color:var(--text);min-width:0}
+.count{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+.tile{flex:1 1 150px;background:var(--tile);padding:14px;border-radius:10px;text-align:center;transition:background .25s, transform .2s}
+.tile:hover{background:var(--hover)}
+.num{font-size:2.2rem;font-weight:700;color:var(--accent);display:inline-block;transition:transform .25s}
+.lbl{font-size:0.85rem;color:rgba(234,241,255,0.8);margin-top:6px}
+/* Fullscreen mode (big counter) */
+.fullscreenMode{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+.fullscreenMode .bigTiles{display:flex;gap:30px;align-items:center}
+.fullscreenMode .bigNum{font-size:6.4rem;font-weight:800;color:var(--accent)}
+/* responsive adjustments */
+@media (max-width:700px){
+#main{margin:70px 12px;padding:18px}
+.tile{flex:1 1 48%}
+.num{font-size:1.8rem}
+#irelandBox{padding:10px}
+}
+@media (max-width:420px){
+.tile{flex:1 1 100%}
+.num{font-size:1.6rem}
+h1{font-size:1.6rem}
+#main{margin:60px 8px;padding:14px}
+}
+/* small helper */
+.muted{color:rgba(234,241,255,0.7);font-size:0.95rem}
+</style>
+</head>
+<body>
+<canvas id="particles"></canvas>
+<!-- Device badge (left-top) -->
+<div id="deviceBadge" aria-hidden="true">📱 Móvil</div>
+<!-- Top controls -->
+<div id="topBar">
+<button id="themeBtn" class="top-btn" aria-pressed="false">Modo claro</button>
+<button id="fullBtn" class="top-btn">Pantalla grande</button>
+</div>
+<!-- Welcome screen -->
+<div id="welcome" role="dialog" aria-modal="true" aria-label="Bienvenida">
+<h1>Bienvenid@</h1>
+<p id="welcomeMsg">Esto es la cuenta atrás. Pulsa empezar para acceder.</p>
+<button id="startBtn" aria-label="Empezar">Empezar</button>
+</div>
+<!-- Main content -->
+<main id="main" role="main" aria-live="polite">
+<div id="irelandBox" aria-hidden="false">
+<img src="https://cdn-icons-png.flaticon.com/512/197/197567.png" alt="Bandera Irlanda">
+<div id="irelandText" class="muted">Cargando días para Irlanda…</div>
+<div id="weatherBox" title="Clima en Dublín">
+<div id="liveDot" aria-hidden="true"></div>
+<div id="weatherIcon" aria-hidden="true">🌤️</div>
+<div id="weatherText" class="muted">—</div>
+</div>
+</div>
+<section class="card" aria-label="Contador personalizado">
+<h2>Cuenta atrás personalizada</h2>
+<div class="controls">
+<input type="date" id="dateInput" aria-label="Selecciona fecha">
+<button id="setBtn" class="top-btn">Calcular</button>
+</div>
+<div class="count" role="group" aria-label="Contador">
+<div class="tile" aria-hidden="false"><div class="num" id="days">--</div><div class="lbl">Días</div></div>
+<div class="tile" aria-hidden="false"><div class="num" id="hours">--</div><div class="lbl">Horas</div></div>
+<div class="tile" aria-hidden="false"><div class="num" id="minutes">--</div><div class="lbl">Minutos</div></div>
+<div class="tile" aria-hidden="false"><div class="num" id="seconds">--</div><div class="lbl">Segundos</div></div>
+</div>
+<p id="msg" class="muted" aria-live="polite"></p>
+</section>
+</main>
+<!-- Fullscreen container created dynamically when requested -->
+<script>
+/* ---------- Sonido suave (click) ---------- */
+const clickSound = new Audio("https://cdn.pixabay.com/audio/2022/03/15/audio_7e521de128.mp3");
+clickSound.preload = "auto";
+/* safe-play helper */
+function tryPlay(sound){
+return sound.play().catch(()=>{/* autoplay blocked — ignore */});
+}
+/* ---------- Device detection and badge ---------- */
+const deviceBadge = document.getElementById('deviceBadge');
+function detectDevice(){
+// Prefer userAgentData where available
+const uaData = navigator.userAgentData;
+if(uaData && typeof uaData.mobile === 'boolean'){
+const mobile = uaData.mobile;
+if(mobile) return {emoji:'📱', text:'Móvil'};
+// userAgentData doesn't give tablet vs desktop reliably; fallback
+}
+const ua = navigator.userAgent || navigator.vendor || window.opera;
+const isTablet = /ipad|tablet|(android(?!.*mobile))/i.test(ua);
+const isMobile = /Mobi|Android|iPhone|BlackBerry|Opera Mini|IEMobile/i.test(ua);
+if(isMobile) return {emoji:'📱', text:'Móvil'};
+if(isTablet) return {emoji:'📋', text:'Tablet'};
+return {emoji:'💻', text:'Escritorio'};
+}
+function updateDeviceBadge(){
+const info = detectDevice();
+deviceBadge.textContent = `${info.emoji} ${info.text}`;
+}
+updateDeviceBadge();
+addEventListener('resize', ()=>{ /* small update on resize for tablets/rotations */ updateDeviceBadge(); });
+/* ---------- Welcome screen behavior ---------- */
+const welcome = document.getElementById('welcome');
+const startBtn = document.getElementById('startBtn');
+setTimeout(()=> startBtn.classList.add('show'), 900);
+startBtn.addEventListener('click', ()=>{
+tryPlay(clickSound);
+// fade
+welcome.classList.add('hide');
+setTimeout(()=> welcome.style.display = 'none', 450);
+// after entering, focus date input for convenience
+setTimeout(()=> document.getElementById('dateInput').focus(), 500);
+});
+/* Allow pressing Enter to start when welcome visible */
+welcome.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ startBtn.click(); } });
+/* ---------- Particles (minimal, responsive) ---------- */
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let W = innerWidth, H = innerHeight;
+function resize(){ W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+resize(); addEventListener('resize', resize);
+const particles = Array.from({length: Math.round(Math.max(25, innerWidth/40))}, ()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+0.4,vy:Math.random()*0.2+0.05}));
+function draw(){
+ctx.clearRect(0,0,W,H);
+ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text') || '#fff';
+const alpha = document.body.classList.contains('light') ? 0.08 : 0.09;
+particles.forEach(p=>{
+ctx.beginPath();
+ctx.globalAlpha = alpha;
+ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+ctx.fill();
+p.y -= p.vy;
+if(p.y < -10) { p.y = H+10; p.x = Math.random()*W; }
+});
+ctx.globalAlpha = 1;
+requestAnimationFrame(draw);
+}
+draw();
+/* ---------- Countdown logic ---------- */
+const dateInput = document.getElementById('dateInput');
+const setBtn = document.getElementById('setBtn');
+const daysEl = document.getElementById('days');
+const hoursEl = document.getElementById('hours');
+const minsEl = document.getElementById('minutes');
+const secsEl = document.getElementById('seconds');
+const msg = document.getElementById('msg');
+const irelandISO = '2026-02-16'; // fijo
+const irelandText = document.getElementById('irelandText');
+function updateIreland(){
+const now = new Date();
+const target = new Date(irelandISO + 'T00:00:00');
+const diff = target - now;
+const days = Math.max(0, Math.floor(diff / 86400000));
+irelandText.textContent = `Quedan ${days} días para ir a Irlanda 🇮🇪`;
+}
+function bounce(el){
+el.style.transform = 'translateY(-6px)';
+setTimeout(()=> el.style.transform = '', 420);
+}
+function calculate(playSound=true){
+if(playSound) tryPlay(clickSound);
+const iso = dateInput.value;
+if(!iso){ msg.textContent = 'Elige una fecha primero.'; return; }
+const now = new Date();
+// accept ISO input; create date at local 00:00:00
+const target = new Date(iso + 'T00:00:00');
+const diff = target - now;
+if(isNaN(target.getTime())){
+msg.textContent = 'Fecha inválida.';
+return;
+}
+if(diff <= 0){
+daysEl.textContent = '0'; hoursEl.textContent='00'; minsEl.textContent='00'; secsEl.textContent='00';
+msg.textContent = 'Esa fecha ya pasó.';
+[daysEl,hoursEl,minsEl,secsEl].forEach(e=>bounce(e));
+return;
+}
+const total = Math.floor(diff/1000);
+const d = Math.floor(total/86400);
+const h = Math.floor((total%86400)/3600);
+const m = Math.floor((total%3600)/60);
+const s = total%60;
+// update only if value changed (avoid flicker)
+if(daysEl.textContent !== String(d)){ daysEl.textContent = d; bounce(daysEl); }
+if(hoursEl.textContent !== String(h).padStart(2,'0')){ hoursEl.textContent = String(h).padStart(2,'0'); bounce(hoursEl); }
+if(minsEl.textContent !== String(m).padStart(2,'0')){ minsEl.textContent = String(m).padStart(2,'0'); bounce(minsEl); }
+if(secsEl.textContent !== String(s).padStart(2,'0')){ secsEl.textContent = String(s).padStart(2,'0'); bounce(secsEl); }
+msg.textContent = `Faltan ${d} días para ${target.toLocaleDateString()}`;
+}
+setBtn.addEventListener('click', ()=> calculate(true));
+dateInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') setBtn.click(); });
+/* Auto-update every second but avoid heavy work if no date chosen */
+setInterval(()=>{
+if(dateInput.value) calculate(false);
+updateIreland();
+},1000);
+/* ---------- Theme toggle (light/dark) ---------- */
+const themeBtn = document.getElementById('themeBtn');
+themeBtn.addEventListener('click', ()=>{
+tryPlay(clickSound);
+document.body.classList.toggle('light');
+themeBtn.textContent = document.body.classList.contains('light') ? 'Modo oscuro' : 'Modo claro';
+});
+/* ---------- Fullscreen / big counter ---------- */
+const fullBtn = document.getElementById('fullBtn');
+let fullscreenEl = null;
+fullBtn.addEventListener('click', ()=>{
+tryPlay(clickSound);
+if(fullscreenEl){
+document.body.removeChild(fullscreenEl);
+fullscreenEl = null;
+return;
+}
+fullscreenEl = document.createElement('div');
+fullscreenEl.className = 'fullscreenMode';
+fullscreenEl.innerHTML = `
+<div class="bigTiles" role="presentation">
+<div style="text-align:center"><div class="bigNum" id="bigDays">--</div><div class="muted">Días</div></div>
+<div style="text-align:center"><div class="bigNum" id="bigHours">--</div><div class="muted">Horas</div></div>
+<div style="text-align:center"><div class="bigNum" id="bigMinutes">--</div><div class="muted">Minutos</div></div>
+<div style="text-align:center"><div class="bigNum" id="bigSeconds">--</div><div class="muted">Segundos</div></div>
+</div>
+<div style="position:absolute;right:18px;top:18px"><button id="closeBig" class="top-btn">Cerrar</button></div>
+`;
+document.body.appendChild(fullscreenEl);
+// populate values and update every sec
+function updateBig(){
+const bigDays = document.getElementById('bigDays');
+const bigHours = document.getElementById('bigHours');
+const bigMinutes = document.getElementById('bigMinutes');
+const bigSeconds = document.getElementById('bigSeconds');
+bigDays.textContent = daysEl.textContent;
+bigHours.textContent = hoursEl.textContent;
+bigMinutes.textContent = minsEl.textContent;
+bigSeconds.textContent = secsEl.textContent;
+}
+updateBig();
+const intv = setInterval(updateBig, 500);
+fullscreenEl.querySelector('#closeBig').addEventListener('click', ()=>{
+tryPlay(clickSound);
+clearInterval(intv);
+if(fullscreenEl){ document.body.removeChild(fullscreenEl); fullscreenEl = null; }
+});
+});
+/* ---------- Weather (Dublín) — Open-Meteo (no key) ---------- */
+const weatherIcon = document.getElementById('weatherIcon');
+const weatherText = document.getElementById('weatherText');
+async function fetchWeather(){
+try{
+const url = 'https://api.open-meteo.com/v1/forecast?latitude=53.3498&longitude=-6.2603&current_weather=true';
+const res = await fetch(url);
+if(!res.ok) throw new Error('no weather');
+const data = await res.json();
+const w = data.current_weather;
+// map some common weather codes to emojis (simplified)
+const map = {
+0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️', 45: '🌫️', 48: '🌫️',
+51: '🌦️', 61: '🌧️', 63:'🌧️', 71:'🌨️', 95:'⛈️'
+};
+weatherIcon.textContent = map[w.weathercode] || '🌡️';
+weatherText.textContent = `${w.temperature}°C`;
+}catch(e){
+weatherIcon.textContent = '🌡️';
+weatherText.textContent = '—';
+}
+}
+// fetch every 10 minutes to be polite; also on load
+fetchWeather();
+setInterval(fetchWeather, 10 * 60 * 1000);
+/* accessibility: announce weather updates quietly for screen readers */
+let lastWeather = '';
+setInterval(()=>{
+const w = weatherText.textContent;
+if(w && w !== lastWeather){
+lastWeather = w;
+// small aria-live update (already in place via irelandText/msg updates)
+}
+}, 5000);
+</script>
+</body>
+</html>
